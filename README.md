@@ -30,7 +30,7 @@ Could use some XD
 
 ### Usage
 
-```
+```php
 $api_key = 'XXXXXXXXXXXXXXXXXXX'; // Maxoptra API Key
 $this->Maxoptra = new Maxoptra($api_key);
 
