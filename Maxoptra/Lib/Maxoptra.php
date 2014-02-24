@@ -90,7 +90,6 @@ class Maxoptra {
 
             // Make the HTTP request
             $response = $this->HttpSocket->post($url, $xml, $options);
-
             if($response->code!=200){
                         throw new MaxoptraException($response->code.' '.$response->reasonPhrase);
             }
@@ -104,16 +103,24 @@ class Maxoptra {
 
             }elseif ($result['orders']['order']['status']=='Error' && !empty($result['orders']['order']['errors']))  {
 
-		$error_output = false;
-		foreach($result['orders']['order']['errors']['error'] as $error){
-			$error_output .= $error['errorMessage']. ' ';
-		}
+				$error_output = false;
+				
+				if(empty($result['orders']['order']['errors']['error'][0])){
+					$error_output = $result['orders']['order']['errors']['error']['errorMessage'];
+					
+				}else{
+					foreach($result['orders']['order']['errors']['error'] as $error){
+						$error_output .= $error['errorMessage']. ' ';
+						
+					}
+					
+				}
 
                 throw new MaxoptraException(str_replace(array('"', '->'), array('', '-'), $error_output));
 
             }else{
 
-                throw new MaxoptraException(__d('maxoptra' , 'Unable to create order with Maxoptra.'));
+                throw new MaxoptraException(__d('maxoptra' , 'Unable to create order with Maxoptra. Check API Key and Connection.'));
 
             }
 
