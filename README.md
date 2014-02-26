@@ -5,7 +5,7 @@ CakePHP 2.x Plugin to schedule deliveries and collections with Maxoptra via thei
 
 ### Installation
 
-Copy the `Maxoptra` folder from this repository to your `app/Plugin` directory so you end up with `app/Plugin/Maxoptra`.
+Copy the `Lib` folder from this repository to `app/Plugin/Maxoptra`.
 
 If you do not already have all Plugins loaded, make sure you load this Plugin from your `Config/bootstrap.php` file as below.
 
