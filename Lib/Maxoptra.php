@@ -98,7 +98,7 @@ class Maxoptra {
             $result = $this->transformResponse($response->body);
 
             // Handle the resposne
-            if ($result['orders']['order']['status']=='Created') {
+            if ($result['orders']['order']['status']=='Created' || $result['orders']['order']['status']=='Updated') {
                 return $result['orders']['order'];
 
             }elseif ($result['orders']['order']['status']=='Error' && !empty($result['orders']['order']['errors']))  {
@@ -126,7 +126,7 @@ class Maxoptra {
 
         } catch (SocketException $e) {
 
-            throw new MaxoptraException(__d('maxoptra', 'Something went wrong communicating with Maxoptra.'));
+            throw new MaxoptraException(__d('maxoptra', 'Something went wrong communicating with Maxoptra. '.$e->getMessage()));
 
         }
 	}
