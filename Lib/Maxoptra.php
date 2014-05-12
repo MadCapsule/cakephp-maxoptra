@@ -27,7 +27,7 @@ class Maxoptra {
 /**
  * Maxoptra API Version
  */
-	protected $maxoptraApiVersion = '1';
+	protected $maxoptraApiVersion = '2';
 
 /**
  * API Key for Authentication
@@ -38,7 +38,7 @@ class Maxoptra {
  * URL for Maxoptra REST API
  * Maxoptra does not yet have a sandbox, all request are made live
  */
-	protected $restUrl = 'http://live.maxoptra.com:80/rest/distribution-api/';
+	protected $restUrl = 'http://live.maxoptra.com:80/rest/2/';
 
 /**
  * General definitions
@@ -53,20 +53,73 @@ class Maxoptra {
  * @return void
  * @author James Mikkelson
  **/
-	public function __construct($key = null) {
+	public function __construct($account = null, $username = null, $password = null) {
 
-		if(is_null($key)){
-			throw new MaxoptraException(__d('maxoptra', 'Do not instantiate Maxoptra without an Maxoptra API Key'));
+		if(is_null($account) || is_null($username) || is_null($password)){
+			throw new MaxoptraException(__d('maxoptra', 'Do not instantiate Maxoptra without providing Maxoptra Authentication Credentials'));
 		}
 
-		if(is_array($key)){
-			throw new MaxoptraException(__d('maxoptra', 'Maxoptra API Key should be a string, not an array'));
-		}
-		
-		$this->{'apiKey'} = $key;
+		$credentials = array(
+							'account'  => $account,
+							'username' => $username,
+							'password' => $password
+						);
+							
+		$this->{'apiKey'} = $this->createSession($credentials);
 
 	}
 
+/**
+ * createSession
+ * Creates a session with the Maxoptra REST API
+ *
+ * @param array $credentials data required to authenticate
+ * @return string api key used to forthcoming calls
+ * @author James Mikkelson
+ **/
+	public function createSession($credentials) {
+
+        try {
+
+            if (!$this->HttpSocket) {
+                $this->HttpSocket = new HttpSocket();
+            }
+
+            $url = $this->getAuthenticationEndpoint().'createSession?accountID='.$credentials['account'].'&user='.$credentials['username'].'&password='.$credentials['password'];
+            $options = $this->getRequestOptions();
+
+            // Make the HTTP request
+            $response = $this->HttpSocket->post($url, null, $options);
+
+            if($response->code!=200){
+                        throw new MaxoptraException($response->code.' '.$response->reasonPhrase);
+            }
+
+            // Transform the results
+            $result = $this->transformResponse($response->body);
+
+            // Handle the resposne
+            if (!empty($result['authResponse']['sessionID'])) {
+                return $result['authResponse']['sessionID'];
+
+            }elseif(!empty($result['error']))  {
+
+				$error_output = $result['error']['errorMessage'];
+                throw new MaxoptraException(str_replace(array('"', '->'), array('', '-'), $error_output));
+
+            }else{
+
+                throw new MaxoptraException(__d('maxoptra' , 'Unable to authenticate with Maxoptra. Check API Username and Password and Connection.'));
+
+            }
+
+        } catch (SocketException $e) {
+
+            throw new MaxoptraException(__d('maxoptra', 'Something went wrong communicating with Maxoptra.'));
+
+        }
+	}	
+	
 /**
  * Delivery
  * Creates a Delivery Order with Maxoptra
@@ -98,9 +151,14 @@ class Maxoptra {
             $result = $this->transformResponse($response->body);
 
             // Handle the resposne
-            if ($result['orders']['order']['status']=='Created' || $result['orders']['order']['status']=='Updated') {
+            if ($result['orders']['order']['status']=='Created') {
                 return $result['orders']['order'];
 
+			}elseif(!empty($result['error'])){
+			
+				$error_output = $result['error']['errorMessage'];
+                throw new MaxoptraException(str_replace(array('"', '->'), array('', '-'), $error_output));
+			
             }elseif ($result['orders']['order']['status']=='Error' && !empty($result['orders']['order']['errors']))  {
 
 				$error_output = false;
@@ -126,7 +184,7 @@ class Maxoptra {
 
         } catch (SocketException $e) {
 
-            throw new MaxoptraException(__d('maxoptra', 'Something went wrong communicating with Maxoptra. '.$e->getMessage()));
+            throw new MaxoptraException(__d('maxoptra', 'Something went wrong communicating with Maxoptra.'));
 
         }
 	}
@@ -145,13 +203,8 @@ class Maxoptra {
 			throw new MaxoptraException(__d('maxoptra' , 'You must provide an array of request parameters'));
 		}
 
-		if (!$this->apiKey) {
-
-			throw new MaxoptraException(__d('maxoptra' , 'No Maxoptra API Key provided'));
-		}
-
 		$request_data = array('apiRequest' => array(
-						'apiKey' => $this->apiKey,
+						'sessionID' => $this->apiKey,
 						'orders' => array('order' => $array)
 						)
 				);
@@ -189,6 +242,18 @@ class Maxoptra {
 	}
 
 /**
+ * Builds the authentication end point using the REST URI and API Version
+ *
+ * @return string
+ * @author James Mikkelson
+ **/
+	public function getAuthenticationEndpoint() {
+
+		return $this->restUrl.'authentication/';
+
+	}	
+	
+/**
  * Builds the end point using the REST URI and API Version
  *
  * @return string
@@ -196,7 +261,7 @@ class Maxoptra {
  **/
 	public function getOrderEndpoint() {
 
-		return $this->restUrl.$this->maxoptraApiVersion.'/orders/';
+		return $this->restUrl.'distribution-api/orders/';
 
 	}
 
@@ -216,7 +281,7 @@ class Maxoptra {
 
 		    throw new MaxoptraException(__d('maxoptra' , 'Unable read response XML: '.$e->getMessage()));
 		}
-	
+
 		return $response_array['apiResponse'];
 
 	}
