@@ -1,7 +1,7 @@
 Maxoptra CakePHP 2.x Plugin
 ================
 
-CakePHP 2.x Plugin to schedule deliveries and collections with Maxoptra via their REST API.
+CakePHP 2.x Plugin to schedule deliveries and collections with Maxoptra via their REST API Version 2.
 
 ### Installation
 
@@ -28,17 +28,16 @@ CakePlugin::loadAll();
 ### Requirements
 
 * CakePHP 2.x
-* Maxoptra Account/API Key
-
-### Tests
-
-Could use some XD
+* Maxoptra Account with API access
 
 ### Usage
 
 ```php
-$api_key = 'XXXXXXXXXXXXXXXXXXX'; // Maxoptra API Key
-$this->Maxoptra = new Maxoptra($api_key);
+$account = 'XXXXXXXXXXXXXXXXXXX'; // Maxoptra Account Id
+$username = 'XXXXXXXXXXXXXXXXXXX'; // Maxoptra Username
+$password = 'XXXXXXXXXXXXXXXXXXX'; // Maxoptra Password
+
+$this->Maxoptra = new Maxoptra($account, $username, $password);
 
 $post_data = array(
 	'orderReference' => 'MCM1234', 					// Your order reference
